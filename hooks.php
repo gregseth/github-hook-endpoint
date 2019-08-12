@@ -4,11 +4,12 @@
  * Endpoint for Github Webhook URLs
  *
  * see: https://help.github.com/articles/post-receive-hooks
- *
+ \n*
  */
 
 // script errors will be send to this email:
 $error_mail = "greg.seth@gmail.com";
+$debug = FALSE;
 
 function run() {
     global $rawInput;
@@ -18,11 +19,13 @@ function run() {
     if (!file_exists($config_filename)) {
         throw new Exception("Can't find ".$config_filename);
     }
+echo "config.json found...\n";
     $config = json_decode(file_get_contents($config_filename), true);
 
     $postBody = $_POST['payload'];
     $payload = json_decode($postBody);
 
+echo "payload decoded...\n";
     if (isset($config['email'])) {
         $headers = 'From: '.$config['email']['from']."\r\n";
         $headers .= 'CC: ' . $payload->pusher->email . "\r\n";
@@ -30,50 +33,47 @@ function run() {
         $headers .= "Content-Type: text/html; charset=ISO-8859-1\r\n";
     }
 
-    // check if the request comes from github server
-    $github_ips = array('207.97.227.253', '50.57.128.197', '108.171.174.178', '50.57.231.61');
-    if (in_array($_SERVER['REMOTE_ADDR'], $github_ips)) {
-        foreach ($config['endpoints'] as $endpoint) {
-            // check if the push came from the right repository and branch
-            if ($payload->repository->url == 'https://api.github.com/repos/' . $endpoint['repo']) {
-                // && $payload->ref == 'refs/heads/' . $endpoint['branch']) {
+    foreach ($config['endpoints'] as $endpoint) {
+        if ($debug) echo "looking for endpoint ".$endpoint['repo']."...\n";
+        // check if the push came from the right repository and branch
+        if ($payload->repository->url == 'https://api.github.com/repos/' . $endpoint['repo']) {
+            // && $payload->ref == 'refs/heads/' . $endpoint['branch']) {
+            if ($debug) echo "endpoint found...\n";
+            // execute update script, and record its output
+            ob_start();
+            passthru($endpoint['run'], $rc);
+            if ($debug) echo "hook executed ($rc)...\n";
+            $output = ob_get_contents();
+            if ($debug) echo "hook executed:\n".$output;
+            ob_end_flush();
+            // prepare and send the notification email
+            if (isset($config['email'])) {
+                // send mail to someone, and the github user who pushed the commit
+                $body = '<p>The Github user <a href="https://github.com/'
+                . $payload->pusher->name .'">@' . $payload->pusher->name . '</a>'
+                . ' has pushed to ' . $payload->repository->url
+                . ' and consequently, ' . $endpoint['action']
+                . '.</p>';
 
-                // execute update script, and record its output
-                ob_start();
-                passthru($endpoint['run']);
-                $output = ob_end_contents();
-
-                // prepare and send the notification email
-                if (isset($config['email'])) {
-                    // send mail to someone, and the github user who pushed the commit
-                    $body = '<p>The Github user <a href="https://github.com/'
-                    . $payload->pusher->name .'">@' . $payload->pusher->name . '</a>'
-                    . ' has pushed to ' . $payload->repository->url
-                    . ' and consequently, ' . $endpoint['action']
-                    . '.</p>';
-
-                    $body .= '<p>Here\'s a brief list of what has been changed:</p>';
-                    $body .= '<ul>';
-                    foreach ($payload->commits as $commit) {
-                        $body .= '<li>'.$commit->message.'<br />';
-                        $body .= '<small style="color:#999">added: <b>'.count($commit->added)
-                            .'</b> &nbsp; modified: <b>'.count($commit->modified)
-                            .'</b> &nbsp; removed: <b>'.count($commit->removed)
-                            .'</b> &nbsp; <a href="' . $commit->url
-                            . '">read more</a></small></li>';
-                    }
-                    $body .= '</ul>';
-                    $body .= '<p>What follows is the output of the script:</p><pre>';
-                    $body .= $output. '</pre>';
-                    $body .= '<p>Cheers, <br/>Github Webhook Endpoint</p>';
-
-                    mail($config['email']['to'], $endpoint['action'], $body, $headers);
+                $body .= '<p>Here\'s a brief list of what has been changed:</p>';
+                $body .= '<ul>';
+                foreach ($payload->commits as $commit) {
+                    $body .= '<li>'.$commit->message.'<br />';
+                    $body .= '<small style="color:#999">added: <b>'.count($commit->added)
+                        .'</b> &nbsp; modified: <b>'.count($commit->modified)
+                        .'</b> &nbsp; removed: <b>'.count($commit->removed)
+                        .'</b> &nbsp; <a href="' . $commit->url
+                        . '">read more</a></small></li>';
                 }
-                return true;
+                $body .= '</ul>';
+                $body .= '<p>What follows is the output of the script:</p><pre>';
+                $body .= $output. '</pre>';
+                $body .= '<p>Cheers, <br/>Github Webhook Endpoint</p>';
+
+                mail($config['email']['to'], $endpoint['action'], $body, $headers);
             }
+            return true;
         }
-    } else {
-        throw new Exception("This does not appear to be a valid requests from Github.\n");
     }
 }
 
