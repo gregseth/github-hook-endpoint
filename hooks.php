@@ -35,8 +35,8 @@ function run() {
     if (in_array($_SERVER['REMOTE_ADDR'], $github_ips)) {
         foreach ($config['endpoints'] as $endpoint) {
             // check if the push came from the right repository and branch
-            if ($payload->repository->url == 'https://github.com/' . $endpoint['repo']
-                && $payload->ref == 'refs/heads/' . $endpoint['branch']) {
+            if ($payload->repository->url == 'https://api.github.com/repos/' . $endpoint['repo']) {
+                // && $payload->ref == 'refs/heads/' . $endpoint['branch']) {
 
                 // execute update script, and record its output
                 ob_start();
