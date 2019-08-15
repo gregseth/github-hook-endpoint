@@ -7,7 +7,7 @@
  *
  */
 
-$debug = TRUE;
+$debug = FALSE;
 
 function run($payload, $endpoint) {
     global $debug, $config, $headers;
