@@ -77,11 +77,10 @@ try {
         if (empty($config->endpoints->$repo))
             throw new Exception("No configuration found for $repo.");
         $repo_config = $config->endpoints->$repo;
-
         if (!empty($repo_config->secret)) {
             $hash = 'sha1='.hash_hmac('sha1', $payload, $repo_config->secret);
             $header_hash = $_SERVER['HTTP_X_HUB_SIGNATURE'];
-            if ($hash != $header_hash)
+            if (!hash_equals($hash, $header_hash))
                 throw new Exception("The recieved hash ($header_hash) doesn't match the computed one ($hash).");
         } // else, there's no secret configured, we assume it's ok
         run(json_decode($payload), $repo_config);
