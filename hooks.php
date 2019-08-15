@@ -14,8 +14,10 @@ function run($payload, $endpoint) {
 
     if ($debug) echo "hook handling started...\n";
     // check if the push came from the right repository and branch
-    if ($payload->repository->url != 'https://api.github.com/repos/' . $endpoint->repo)
-        throw new Exception("The source repository $payload->repository->url doesn't match the expected one $endpoint->repo");
+    $payload_repo = $payload->repository->url;
+    $endpoint_repo = 'https://github.com/' . $endpoint->repo;
+    if ($payload_repo != $endpoint_repo)
+        throw new Exception("The source repository $payload_repo doesn't match the expected one $endpoint_repo");
     if ($debug) echo "endpoint found...\n";
     // execute update script, and record its output
     ob_start();
