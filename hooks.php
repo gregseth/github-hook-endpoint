@@ -10,7 +10,7 @@
 $debug = TRUE;
 
 function run($payload, $endpoint) {
-    global $config;
+    global $debug, $config, $headers;
 
     if ($debug) echo "hook handling started...\n";
     // check if the push came from the right repository and branch
@@ -27,10 +27,6 @@ function run($payload, $endpoint) {
     // prepare and send the notification email
     if (isset($config->email)) {
         // send mail to someone, and the github user who pushed the commit
-        $headers = 'From: '.$config->email->from."\r\n";
-        $headers .= 'CC: ' . $payload->pusher->email . "\r\n";
-        $headers .= "MIME-Version: 1.0\r\n";
-        $headers .= "Content-Type: text/html; charset=ISO-8859-1\r\n";
         $body = '<p>The Github user <a href="https://github.com/'
         . $payload->pusher->name .'">@' . $payload->pusher->name . '</a>'
         . ' has pushed to ' . $payload->repository->url
@@ -64,6 +60,11 @@ if (!file_exists($config_filename)) {
 }
 $config = json_decode(file_get_contents($config_filename));
 
+$headers = 'From: '.$config->email->from."\r\n";
+$headers .= 'CC: ' . $payload->pusher->email . "\r\n";
+$headers .= "MIME-Version: 1.0\r\n";
+$headers .= "Content-Type: text/html; charset=ISO-8859-1\r\n";
+
 try {
     $payload = file_get_contents('php://input');
     if (empty($payload)) {
@@ -88,6 +89,6 @@ try {
 } catch ( Exception $e ) {
     $msg = $e->getMessage();
     echo $msg;
-    mail($config->email->to, $msg, ''.$e);
+    mail($config->email->to, $msg, ''.$e, $header);
 }
 
