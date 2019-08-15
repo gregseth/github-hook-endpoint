@@ -4,11 +4,9 @@
  * Endpoint for Github Webhook URLs
  *
  * see: https://help.github.com/articles/post-receive-hooks
- \n*
+ *
  */
 
-// script errors will be send to this email:
-$error_mail = "greg.seth@gmail.com";
 $debug = TRUE;
 
 function run($payload, $endpoint) {
