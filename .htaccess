@@ -1,0 +1,10 @@
+# The rewrite directives require mod_rewrite to be enabled on your server
+# (use `a2enmod rewrite` to enable) and the directory must have the directive
+# AllowOverride FileInfo 
+RewriteEngine On
+RewriteRule ^/hook/(.*)     /hooks.php?repo=$1      [L]
+
+# AllowOverride AuthConfig
+<Files "config.json">  
+  Require all denied
+</Files>
