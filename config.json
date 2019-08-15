@@ -1,0 +1,15 @@
+{
+    "email": {
+        "from": "github-push-notification@example.com",
+        "to": "your.address@example.com"
+    },
+    "endpoints": {
+        "endpoint_name" : {
+            "repo": "username/reponame",
+            "branch": "master",
+            "run": "./script.sh",
+            "secret": "the secret key for this webhook",
+            "action": "Subject of notification email"
+        }
+    }
+}
