@@ -64,7 +64,7 @@ $config = json_decode(file_get_contents($config_filename));
 
 $headers = 'From: '.$config->email->from."\r\n";
 $headers .= "MIME-Version: 1.0\r\n";
-$headers .= "Content-Type: text/html; charset=ISO-8859-1\r\n";
+$headers .= "Content-Type: text/html; charset=UTF-8\r\n";
 
 try {
     $payload = file_get_contents('php://input');
